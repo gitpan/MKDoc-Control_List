@@ -8,7 +8,7 @@ package MKDoc::Control_List;
 use strict;
 use warnings;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 
 sub new
@@ -93,8 +93,6 @@ sub _build_code_header
 {
     return (
 	'$VAR1 = sub {',
-	'my $condition = {};',
-	'my $ret_value = {};'
        );    
 }
 
@@ -104,7 +102,7 @@ sub _build_code_condition
     my $self = shift;
     my $line = shift;
     $line =~ /^\s*CONDITION\s+/ || return;
-    $line =~ s/^\s*CONDITION\s+(\w+)\s+(.*)$/\$condition->{$1} = sub { $2 };/;
+    $line =~ s/^\s*CONDITION\s+(\w+)\s+(.*)$/my \$cnd_$1 = do { $2 };/;
     return $line;
 }
 
@@ -114,7 +112,7 @@ sub _build_code_ret_value
     my $self = shift;
     my $line = shift;
     $line =~ /^\s*RET_VALUE\s+/ || return;
-    $line =~ s/^\s*RET_VALUE\s+(\w+)\s+(.*)$/\$ret_value->{$1} = sub { $2 };/;
+    $line =~ s/^\s*RET_VALUE\s+(\w+)\s+(.*)$/my \$ret_$1 = do { $2 };/;
     return $line;
 }
 
@@ -129,8 +127,8 @@ sub _build_code_rule
     my @ret_values = $ret_values =~ /(\w+)/g;
     my @conditions = $conditions =~ /(\w+)/g;
     
-    my $code = join ' && ', map { "\$condition->{$_}->()" } @conditions;
-    $code   .= ' && return ( '  . join ', ', map { "\$ret_value->{$_}->()" } @ret_values;
+    my $code = join ' && ', map { "\$cnd_$_" } @conditions;
+    $code   .= ' && return ( '  . join ', ', map { "\$ret_$_" } @ret_values;
     $code   .= ' );';
     return $code;
 }
