@@ -8,7 +8,7 @@ package MKDoc::Control_List;
 use strict;
 use warnings;
 
-our $VERSION = '0.2';
+our $VERSION = '0.3';
 
 
 sub new
@@ -38,7 +38,7 @@ sub _read_file
 {
     my $self = shift;
     my $file = $self->{file};
-    open FP, "<$file" || die "Cannot read-open $file. Reason: $@";
+    open FP, "<:utf8", $file || die "Cannot read-open $file. Reason: $@";
     my $data = join '', <FP>;
     close FP;
     return $data;
