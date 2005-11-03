@@ -8,7 +8,7 @@ package MKDoc::Control_List;
 use strict;
 use warnings;
 
-our $VERSION = '0.3';
+our $VERSION = '0.31';
 
 
 sub new
@@ -21,6 +21,7 @@ sub new
 sub process
 {
     my $self = shift;
+    $self->{'caller'} = caller;
     my $code = $self->_compile();
     my @res  = $code->();
     return @res;
@@ -91,8 +92,10 @@ sub _build_code
 
 sub _build_code_header
 {
+    my $self = shift;
+    my $caller = $self->{'caller'};
     return (
-	'$VAR1 = sub {',
+	"\$VAR1 = sub { package $caller;",
        );    
 }
 
@@ -150,7 +153,7 @@ __END__
 
 =head1 NAME
 
-MKDoc::Control_List - Express complex set of rules with control lists
+MKDoc::Control_List - Express complex sets of rules with control lists
 
 
 =head1 SYNOPSIS
@@ -189,7 +192,7 @@ Say you have an array of Child objects. Each object has the following methods:
 Your code might look like this:
 
     local $Current_Child = undef;
-    my $control_list = new MKDoc::Control_List ( data => 'toy_config.txt' );
+    my $control_list = new MKDoc::Control_List ( file => 'toy_config.txt' );
 
     my %Toys = ();
     foreach my $child (all_children)
@@ -217,7 +220,7 @@ To start simple, we have a very generic toy which we'll give to all children.
 
    RET_VALUE generic_toy    "Gizmo"
 
-   RULE gizmo WHEN always_true
+   RULE generic_toy WHEN always_true
 
 
 =head2 Segregating boys and girls
@@ -237,9 +240,9 @@ The control list would become:
    RET_VALUE boy_toy        "Galaxy Warrior"
    RET_VALUE girl_toy       "Doll"
 
-   RULE boy_toy  WHEN isa_boy
-   RULE girl_toy WHEN isa_girl
-   RULE gizmo    WHEN always_true
+   RULE boy_toy        WHEN isa_boy
+   RULE girl_toy       WHEN isa_girl
+   RULE generic_toy    WHEN always_true
 
 The order of the RULE statements is primordial! The Control List will return
 specified values as soon as all the conditions listed after the WHEN keyword
@@ -247,11 +250,11 @@ are satisfied.
 
 So if you had:
 
-   RULE gizmo    WHEN always_true
-   RULE boy_toy  WHEN isa_boy
-   RULE girl_toy WHEN isa_girl
+   RULE generic_toy    WHEN always_true
+   RULE boy_toy        WHEN isa_boy
+   RULE girl_toy       WHEN isa_girl
 
-The control list would have ALWAYS returned gizmos no matter what.
+The control list would have ALWAYS returned Gizmos no matter what.
 
 
 =head2 Segregating the age
@@ -294,7 +297,7 @@ Here's our final control list:
    RULE girly_shoes         WHEN isa_girl is_8_or_more
    RULE boy_toy             WHEN isa_boy
    RULE girl_toy            WHEN isa_girl
-   RULE gizmo               WHEN always_true
+   RULE generic_toy         WHEN always_true
 
 
 =head2 More configuration
@@ -329,7 +332,7 @@ No problem:
    RULE girly_shoes          WHEN isa_girl is_8_or_more
    RULE boy_toy              WHEN isa_boy
    RULE girl_toy             WHEN isa_girl
-   RULE gizmo                WHEN always_true
+   RULE generic_toy          WHEN always_true
 
 
 =head1 CONFIGURATION SYNTAX
@@ -343,7 +346,8 @@ it references are TRUE.
   CONDITION <condition_name> <Perl Expression>
 
 If the perl expression is too big to fit on one line, write a function in
-a specific package and call that instead.
+a specific package and call that instead.  By default, expressions operate
+in the namespace of the calling package.
 
   CONDITION foo_condition    MyPackage::is_foo()
 
@@ -356,7 +360,8 @@ return when a rule is activated.
   RET_VALUE <ret_value_name> <Perl Expression>
 
 If the perl expression is too big to fit on one line, write a function in
-a specific package and call that instead.
+a specific package and call that instead.  By default, expressions operate
+in the namespace of the calling package.
 
   RET_VALUE foo_value    MyPackage::my_ret_value()
 
@@ -424,7 +429,7 @@ see as a standalone CPAN module, send an email to <mkdoc-modules@lists.webarch.c
 
 Copyright 2003 - MKDoc Holdings Ltd.
 
-Author: Jean-Michel Hiver <jhiver@mkdoc.com>
+Author: Jean-Michel Hiver
 
 This module is free software and is distributed under the same license as Perl
 itself. Use it at your own risk.
